@@ -557,7 +557,7 @@ class KeywordProcessor(object):
             return keywords_extracted
         return [value[0] for value in keywords_extracted]
 
-    def replace_keywords(self, sentence):
+    def replace_keywords(self, a_sentence):
         """Searches in the string for all keywords present in corpus.
         Keywords present are replaced by the clean name and a new string is returned.
 
@@ -569,7 +569,7 @@ class KeywordProcessor(object):
 
         Examples:
             >>> from flashtext import KeywordProcessor
-            >>> keyword_processor = KeywordProcessor()
+            >>> keyword_processor = KeywordProcessor2()
             >>> keyword_processor.add_keyword('Big Apple', 'New York')
             >>> keyword_processor.add_keyword('Bay Area')
             >>> new_sentence = keyword_processor.replace_keywords('I love Big Apple and bay area.')
@@ -577,13 +577,31 @@ class KeywordProcessor(object):
             >>> 'I love New York and Bay Area.'
 
         """
-        if not sentence:
+        if not a_sentence:
             # if sentence is empty or none just return the same.
-            return sentence
+            return a_sentence
         new_sentence = []
-        orig_sentence = sentence
+
         if not self.case_sensitive:
-            sentence = sentence.lower()
+            sentence = a_sentence.lower()
+            # by Ihor Bobak:
+            # some letters can expand in size when lower() is called, therefore we will preprocess
+            # a_sentense to find those letters which lower()-ed to 2 or more symbols.
+            # So, imagine that X is lowered as yz,  the rest are lowered as is:  A->a, B->b, C->c
+            # then for the string ABCXABC we want to get
+            # ['A', 'B', 'C', 'X', '',  'A', 'B', 'C'] which corresponds to
+            # ['a', 'b', 'c', 'y', 'z', 'a', 'b', 'c'] because when the code below will run by the indexes
+            # of the lowered string, it will "glue" the original string also by THE SAME indexes
+            orig_sentence = []
+            for i in range(0, len(a_sentence)):
+                char = a_sentence[i]
+                len_char_lower = len(char.lower())
+                for j in range(0, len_char_lower):  # in most cases it will work just one iteration and will add the same char
+                    orig_sentence.append(char if j == 0 else '')  # but if it happens that X->yz, then for z it will add ''
+        else:
+            sentence = a_sentence
+            orig_sentence = a_sentence
+
         current_word = ''
         current_dict = self.keyword_trie_dict
         current_white_space = ''
@@ -639,7 +657,8 @@ class KeywordProcessor(object):
                             current_word = current_word_continued
                     current_dict = self.keyword_trie_dict
                     if longest_sequence_found:
-                        new_sentence.append(longest_sequence_found + current_white_space)
+                        new_sentence.append(longest_sequence_found)
+                        new_sentence.append(current_white_space)
                         current_word = ''
                         current_white_space = ''
                     else:
