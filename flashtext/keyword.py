@@ -42,7 +42,7 @@ class KeywordProcessor(object):
                 Defaults to False
         """
         self._keyword = '_keyword_'
-        self._white_space_chars = set(['.', '\t', '\n', '\a', ' ', ','])
+        self._white_space_chars = set(['.', '\t', '\n', '\a', ' ', ',', "'"])
         try:
             # python 2.x
             self.non_word_boundaries = set(string.digits + string.letters + '_')
